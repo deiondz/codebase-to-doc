@@ -1,6 +1,7 @@
 "use client";
 
 import { UserButton } from "@daveyplate/better-auth-ui";
+import { IconChevronDown } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
@@ -15,6 +16,11 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "~/components/ui/collapsible";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
@@ -24,6 +30,7 @@ import {
   useCodebaseExportProgress,
 } from "~/lib/codebase-to-doc/use-codebase-export";
 import MaxWidthContainer from "~/lib/ui-utills";
+import { cn } from "~/lib/utils";
 
 export default function ConvertPage() {
   const zipInputRef = useRef<HTMLInputElement>(null);
@@ -147,6 +154,94 @@ export default function ConvertPage() {
                 {zipFile?.name ?? "No file selected"}
               </span>
             </div>
+            <Collapsible className="rounded-lg border border-border/60 bg-muted/20">
+              <CollapsibleTrigger
+                className={cn(
+                  "group flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm",
+                  "text-foreground hover:bg-muted/40",
+                  "data-[state=open]:rounded-t-lg data-[state=open]:border-border/60 data-[state=open]:border-b"
+                )}
+                type="button"
+              >
+                <span className="font-medium">
+                  Don&apos;t have a .zip? Zip your project folder first
+                </span>
+                <IconChevronDown
+                  aria-hidden
+                  className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="border-border/60 border-t px-3 py-3 text-muted-foreground text-sm leading-relaxed">
+                <p className="mb-3">
+                  This tool needs a single{" "}
+                  <strong className="text-foreground">.zip</strong> of your
+                  project root (the folder that has your source files). Create
+                  one on your computer, then use{" "}
+                  <strong className="text-foreground">Choose .zip</strong>{" "}
+                  above.
+                </p>
+                <p className="mb-2 font-medium text-foreground">Windows</p>
+                <figure className="mb-4 overflow-hidden rounded-md border border-border/80 bg-muted/30">
+                  <Image
+                    alt="Windows 11 File Explorer: right-click menu with Compress to expanded, ZIP File selected"
+                    className="h-auto max-h-[min(22rem,55vh)] w-full object-contain object-top-left"
+                    height={420}
+                    sizes="(max-width: 640px) 100vw, min(42rem, 90vw)"
+                    src="/zip.png"
+                    width={780}
+                  />
+                  <figcaption className="border-border/80 border-t px-3 py-2 text-muted-foreground text-xs leading-snug">
+                    <span className="text-foreground">Windows 11:</span> open{" "}
+                    <strong className="text-foreground">Compress to…</strong>,
+                    then choose{" "}
+                    <strong className="text-foreground">ZIP File</strong> (as in
+                    the screenshot).
+                  </figcaption>
+                </figure>
+                <ol className="mb-4 list-decimal space-y-1.5 pl-5">
+                  <li>
+                    Open File Explorer and go to the folder that contains your
+                    project.
+                  </li>
+                  <li>
+                    Right-click the project folder (not a file inside it).
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Windows 11:</strong>{" "}
+                    point to{" "}
+                    <strong className="text-foreground">Compress to…</strong>,
+                    then click{" "}
+                    <strong className="text-foreground">ZIP File</strong>.{" "}
+                    <strong className="text-foreground">Windows 10:</strong>{" "}
+                    choose <strong className="text-foreground">Send to</strong>{" "}
+                    →{" "}
+                    <strong className="text-foreground">
+                      Compressed (zipped) folder
+                    </strong>
+                    .
+                  </li>
+                  <li>
+                    A new <code className="text-[0.9em]">.zip</code> appears
+                    next to the folder. Upload that file here.
+                  </li>
+                </ol>
+                <p className="mb-2 font-medium text-foreground">macOS</p>
+                <ol className="list-decimal space-y-1.5 pl-5">
+                  <li>In Finder, right-click your project folder.</li>
+                  <li>
+                    Choose{" "}
+                    <strong className="text-foreground">
+                      Compress &quot;FolderName&quot;
+                    </strong>
+                    .
+                  </li>
+                  <li>
+                    Upload the resulting{" "}
+                    <code className="text-[0.9em]">.zip</code>.
+                  </li>
+                </ol>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
           <div className="flex flex-col gap-2">
