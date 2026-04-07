@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { GitHubRepoLink } from "~/components/github-repo-link";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -96,7 +97,8 @@ export default function ConvertPage() {
 
   return (
     <MaxWidthContainer className="pt-14">
-      <div className="mb-8 flex w-full flex-wrap items-center justify-between gap-4">
+      <div className="mb-8 flex w-full flex-wrap items-center justify-end gap-3">
+        <GitHubRepoLink />
         <UserButton />
       </div>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -105,7 +107,7 @@ export default function ConvertPage() {
             Codebase to document
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Upload a .zip of your project and recive a document in your desired
+            Upload a .zip of your project and receive a document in your desired
             format. This tool is free to use and will always be free.
           </p>
         </div>
@@ -326,7 +328,7 @@ export default function ConvertPage() {
         <GeneratedFilesStatsCard />
         <figure className="mt-6 flex flex-col items-center gap-3 text-center">
           <Image
-            alt=""
+            alt="Codebase to Doc illustration — export your repository as documentation"
             className="mx-auto max-h-48 max-w-full rounded-xl object-contain"
             height={360}
             src="/image.png"

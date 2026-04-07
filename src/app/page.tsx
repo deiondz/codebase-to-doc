@@ -1,6 +1,7 @@
 import { UserButton } from "@daveyplate/better-auth-ui";
 import Link from "next/link";
 
+import { GitHubRepoLink } from "~/components/github-repo-link";
 import { Button } from "~/components/ui/button";
 import MaxWidthContainer from "~/lib/ui-utills";
 
@@ -11,7 +12,10 @@ export default function Home() {
         <Button asChild size="sm" variant="outline">
           <Link href="/convert">Codebase to document</Link>
         </Button>
-        <UserButton />
+        <div className="flex items-center gap-3">
+          <GitHubRepoLink />
+          <UserButton />
+        </div>
       </div>
     </MaxWidthContainer>
   );

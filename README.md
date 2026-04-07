@@ -1,29 +1,109 @@
-# Create T3 App
+# Codebase to Doc
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+Open-source web app that turns a **zipped project folder** into a **single downloadable document**—Markdown, plain text, Word (`.docx`), or PDF. It focuses on real source files and skips common noise (dependencies, build output, editor tooling, large binaries, and similar) so the result is easier to read and share.
 
-## What's next? How do I make an app with this?
+Sign-in is required to generate exports. Authentication is powered by [Better Auth](https://www.better-auth.com/) with email verification and optional Google OAuth.
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+## Features
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+- **Upload a `.zip`** of your repository or project root and pick an output format.
+- **Progress feedback** during processing (server-sent events).
+- **Sensible filtering** so generated docs emphasize source code, not `node_modules`, `.git`, lockfiles, env files, or bulky binaries.
+- **Stats** on generated files for transparency (see the convert UI).
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+## Tech stack
 
-## Learn More
+| Area | Choice |
+|------|--------|
+| Framework | [Next.js](https://nextjs.org/) (App Router) |
+| UI | React, [Tailwind CSS](https://tailwindcss.com/), [Radix](https://www.radix-ui.com/)-based components |
+| Auth | [Better Auth](https://www.better-auth.com/) + [MongoDB](https://www.mongodb.com/) adapter |
+| Data | MongoDB |
+| Validation / env | [Zod](https://zod.dev/), [@t3-oss/env-nextjs](https://env.t3.gg/) |
+| Document output | e.g. `docx`, `pdfkit`, `fflate` for zip handling |
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+Scaffold history: bootstrapped from [create-t3-app](https://create.t3.gg/) (this repo has evolved beyond the default template).
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+## Prerequisites
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+- **Node.js** (current LTS recommended)
+- **MongoDB** reachable from the app (local or hosted)
 
-## How do I deploy this?
+## Getting started
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+1. **Clone the repository**
+
+   ```bash
+   git clone <your-fork-or-upstream-url>
+   cd codebase-to-doc
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Environment variables**
+
+   Copy `.env.example` to `.env` and fill in values. The canonical schema lives in [`src/env.js`](src/env.js). At minimum you typically need:
+
+   | Variable | Purpose |
+   |----------|---------|
+   | `MONGODB_URI` | MongoDB connection string (include database name in the path or use `MONGODB_DB_NAME`) |
+   | `ZEPTOMAIL_API_KEY` | Transactional email (verification, password reset) via [ZeptoMail](https://www.zoho.com/zeptomail/) |
+   | `BETTER_AUTH_SECRET` | Secret for signing sessions (required in production) |
+   | `BETTER_AUTH_URL` | Public site URL, e.g. `http://localhost:3000` in dev, `https://your-domain.com` in production (required in production) |
+
+   Optional:
+
+   | Variable | Purpose |
+   |----------|---------|
+   | `BETTER_AUTH_GOOGLE_CLIENT_ID` / `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | Enable **Sign in with Google** when both are set |
+
+   For builds where validating every variable is awkward (e.g. some Docker flows), you can set `SKIP_ENV_VALIDATION`—see [`src/env.js`](src/env.js).
+
+4. **Run the dev server**
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000), sign up or sign in, then open **Codebase to document** (`/convert`) to upload a zip and download the generated file.
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run preview` | Build then start locally |
+| `npm run typecheck` | TypeScript (`tsc --noEmit`) |
+| `npm run check` | [Biome](https://biomejs.dev/) lint/format (project rules) |
+
+## Project layout (high level)
+
+- `src/app/` — App Router pages and API routes (`/api/codebase-to-doc`, auth UI, etc.)
+- `src/lib/codebase-to-doc/` — Client hooks and shared types for exports
+- `src/server/codebase-to-doc/` — Server-side zip → document pipeline
+- `src/server/better-auth/` — Auth configuration
+
+## Contributing
+
+Contributions are welcome.
+
+1. Open an issue first if you plan a large change, so we can align on direction.
+2. Fork the repo, create a branch, and keep commits focused.
+3. Run **`npm run typecheck`** and **`npm run check`** before opening a pull request.
+4. Describe **what** changed and **why** in the PR (user-visible behavior, env changes, or breaking changes).
+
+Please keep secrets and local `.env` files out of commits.
+
+## License
+
+This repository does not yet include a `LICENSE` file in the root. If you maintain a fork, add one (for example MIT or Apache-2.0) so others know how they may use and redistribute the code.
+
+## Credits
+
+Made with care by **Blastbenchers**.
