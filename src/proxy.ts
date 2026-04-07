@@ -1,28 +1,28 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import { createRouteMatcher } from "./lib/create-route-matcher";
 import {
   authSectionPatterns,
   protectedRoutePatterns,
   routes,
 } from "./lib/routes";
-import { auth } from "./server/better-auth";
+import { getSession } from "./server/better-auth/server";
 
 const isProtectedRoute = createRouteMatcher([...protectedRoutePatterns]);
 const isAuthSection = createRouteMatcher([...authSectionPatterns]);
 
 export default async function proxy(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: req.headers });
+  const session = await getSession();
 
   if (isProtectedRoute(req) && !session) {
-    console.log("Redirecting to sign-in");
     return NextResponse.redirect(new URL(routes.auth.signIn, req.url));
   }
 
-  const isOAuthCallback = req.nextUrl.pathname === routes.auth.callback;
+  const pathname = req.nextUrl.pathname;
+  const isOAuthCallback = pathname === routes.auth.callback;
+  const isSignOutPage = pathname === routes.auth.signOut;
 
-  if (isAuthSection(req) && session && !isOAuthCallback) {
+  if (isAuthSection(req) && session && !isOAuthCallback && !isSignOutPage) {
     return NextResponse.redirect(new URL(routes.afterSignIn, req.url));
   }
 

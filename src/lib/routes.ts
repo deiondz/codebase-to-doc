@@ -14,6 +14,8 @@ export const routes = {
     signIn: `${authPrefix}/${authViewPaths.SIGN_IN}`,
     signUp: `${authPrefix}/${authViewPaths.SIGN_UP}`,
     callback: `${authPrefix}/${authViewPaths.CALLBACK}`,
+    /** Better Auth UI `UserButton` navigates here to end the session. */
+    signOut: `${authPrefix}/${authViewPaths.SIGN_OUT}`,
   },
   account: {
     prefix: accountPrefix,
@@ -23,7 +25,7 @@ export const routes = {
 /** `createRouteMatcher` patterns for routes that require a session. */
 export const protectedRoutePatterns = [
   "/dashboard/:path*",
-  "convert",
+  "/convert",
   `${accountPrefix}/:path*`,
   routes.convert,
 ] as const;
