@@ -2,13 +2,20 @@ import { Buffer } from "node:buffer";
 
 import type { CodebaseExportSsePayload } from "~/lib/codebase-to-doc/sse-payload";
 import type { DocOutputFormat } from "~/lib/codebase-to-doc/types";
-import { exportFromZipBuffer } from "~/server/codebase-to-doc/pipeline";
-import { putExportResult } from "~/server/codebase-to-doc/result-store";
 import { auth } from "~/server/better-auth";
+import { exportFromZipBuffer } from "~/server/codebase-to-doc/pipeline";
+import {
+  putExportResult,
+  takeExportResult,
+} from "~/server/codebase-to-doc/result-store";
+import { recordGeneratedExport } from "~/server/stats/generated-file-stats";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
+
+/** Inline document in SSE when under this size; larger exports download via GET result. */
+const MAX_INLINE_BYTES = 3 * 1024 * 1024;
 
 function encodeSse(payload: CodebaseExportSsePayload): Uint8Array {
   return new TextEncoder().encode(`data: ${JSON.stringify(payload)}\n\n`);
@@ -91,7 +98,6 @@ export async function POST(request: Request): Promise<Response> {
         });
         const resultId = putExportResult(result.buffer, result.filename);
         /** Inline when modest so the client need not GET a separate route (fixes isolate / serverless). */
-        const MAX_INLINE_BYTES = 3 * 1024 * 1024;
         const payload: CodebaseExportSsePayload = {
           type: "complete",
           resultId,
@@ -105,6 +111,10 @@ export async function POST(request: Request): Promise<Response> {
             : {}),
         };
         send(payload);
+        if (result.buffer.length <= MAX_INLINE_BYTES) {
+          takeExportResult(resultId);
+          await recordGeneratedExport();
+        }
         controller.close();
       } catch (e) {
         const message = e instanceof Error ? e.message : "Export failed";

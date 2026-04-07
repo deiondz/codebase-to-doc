@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
+import { generatedFileStatsKeys } from "~/lib/stats/query-keys";
+
 import { postCodebaseExport } from "./fetch-export";
 import { codebaseExportKeys } from "./query-keys";
 
@@ -146,6 +148,11 @@ export function useCodebaseExport() {
 				skipped: done.skipped,
 			};
 			return result;
+		},
+		onSuccess: () => {
+			void queryClient.invalidateQueries({
+				queryKey: generatedFileStatsKeys.all,
+			});
 		},
 		onSettled: () => {
 			setProgress(null);

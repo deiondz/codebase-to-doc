@@ -1,5 +1,6 @@
-import { takeExportResult } from "~/server/codebase-to-doc/result-store";
 import { auth } from "~/server/better-auth";
+import { takeExportResult } from "~/server/codebase-to-doc/result-store";
+import { recordGeneratedExport } from "~/server/stats/generated-file-stats";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,8 @@ export async function GET(
   if (!result) {
     return new Response("Not found or expired", { status: 404 });
   }
+
+  await recordGeneratedExport();
 
   const mime = (() => {
     const name = result.filename;
