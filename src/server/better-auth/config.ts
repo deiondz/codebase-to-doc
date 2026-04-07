@@ -1,16 +1,29 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { nextCookies } from "better-auth/next-js";
 
 import { env } from "~/env";
 import { db, mongoClient } from "~/server/db/mongo";
 import { sendPasswordResetEmail } from "~/server/email/templates/password-reset";
 import { sendVerificationResetEmail } from "~/server/email/templates/verification";
 
+const googleClientId = env.BETTER_AUTH_GOOGLE_CLIENT_ID;
+const googleClientSecret = env.BETTER_AUTH_GOOGLE_CLIENT_SECRET;
+
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL ?? "http://localhost:3000",
   appName: "codebase-to-docs",
   database: mongodbAdapter(db, { client: mongoClient }),
   experimental: { joins: true },
+  ...(googleClientId &&
+    googleClientSecret && {
+      socialProviders: {
+        google: {
+          clientId: googleClientId,
+          clientSecret: googleClientSecret,
+        },
+      },
+    }),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -31,6 +44,7 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     sendOnSignIn: true,
   },
+  plugins: [nextCookies()],
 });
 
 export type Session = typeof auth.$Infer.Session;

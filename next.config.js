@@ -5,6 +5,9 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  // pdfkit reads .afm font files via __dirname; bundling breaks that path.
+  serverExternalPackages: ["pdfkit"],
+};
 
 export default config;

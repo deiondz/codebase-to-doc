@@ -20,6 +20,10 @@ export const env = createEnv({
         ? z.string()
         : z.string().optional(),
 
+    /** Google OAuth (optional; enable “Sign in with Google” when both are set) */
+    BETTER_AUTH_GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+    BETTER_AUTH_GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -44,6 +48,8 @@ export const env = createEnv({
     ZEPTOMAIL_API_KEY: process.env.ZEPTOMAIL_API_KEY,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_GOOGLE_CLIENT_ID: process.env.BETTER_AUTH_GOOGLE_CLIENT_ID,
+    BETTER_AUTH_GOOGLE_CLIENT_SECRET: process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
     NODE_ENV: process.env.NODE_ENV,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },

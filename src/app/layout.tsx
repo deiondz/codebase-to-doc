@@ -29,11 +29,13 @@ export default function RootLayout({
       className={cn(geist.variable, "font-mono", jetbrainsMono.variable)}
       lang="en"
     >
-      <body className="flex min-h-full flex-col">
-        <Providers>
-          <TooltipProvider>{children}</TooltipProvider>
-        </Providers>
-        <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] bg-background" />
+      <body className="flex min-h-screen flex-col">
+        <div className="relative flex flex-1 flex-col">
+          <Providers>
+            <TooltipProvider>{children}</TooltipProvider>
+          </Providers>
+          <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] bg-background" />
+        </div>
       </body>
     </html>
   );
