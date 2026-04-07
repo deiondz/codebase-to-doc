@@ -20,13 +20,14 @@ Sign-in is required to generate exports. Authentication is powered by [Better Au
 | Auth | [Better Auth](https://www.better-auth.com/) + [MongoDB](https://www.mongodb.com/) adapter |
 | Data | MongoDB |
 | Validation / env | [Zod](https://zod.dev/), [@t3-oss/env-nextjs](https://env.t3.gg/) |
+| Package manager | [Bun](https://bun.sh) (`bun.lock`) |
 | Document output | e.g. `docx`, `pdfkit`, `fflate` for zip handling |
 
 Scaffold history: bootstrapped from [create-t3-app](https://create.t3.gg/) (this repo has evolved beyond the default template).
 
 ## Prerequisites
 
-- **Node.js** (current LTS recommended)
+- **[Bun](https://bun.sh)** (see `packageManager` in [`package.json`](package.json); lockfile: `bun.lock`)
 - **MongoDB** reachable from the app (local or hosted)
 
 ## Getting started
@@ -41,7 +42,7 @@ Scaffold history: bootstrapped from [create-t3-app](https://create.t3.gg/) (this
 2. **Install dependencies**
 
    ```bash
-   npm install
+   bun install
    ```
 
 3. **Environment variables**
@@ -66,7 +67,7 @@ Scaffold history: bootstrapped from [create-t3-app](https://create.t3.gg/) (this
 4. **Run the dev server**
 
    ```bash
-   npm run dev
+   bun run dev
    ```
 
    Open [http://localhost:3000](http://localhost:3000), sign up or sign in, then open **Codebase to document** (`/convert`) to upload a zip and download the generated file.
@@ -75,12 +76,12 @@ Scaffold history: bootstrapped from [create-t3-app](https://create.t3.gg/) (this
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Development server (Turbopack) |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run preview` | Build then start locally |
-| `npm run typecheck` | TypeScript (`tsc --noEmit`) |
-| `npm run check` | [Biome](https://biomejs.dev/) lint/format (project rules) |
+| `bun run dev` | Development server (Turbopack) |
+| `bun run build` | Production build |
+| `bun run start` | Start production server |
+| `bun run preview` | Build then start locally |
+| `bun run typecheck` | TypeScript (`tsc --noEmit`) |
+| `bun run check` | [Biome](https://biomejs.dev/) lint/format (project rules) |
 
 ## Project layout (high level)
 
@@ -95,7 +96,7 @@ Contributions are welcome.
 
 1. Open an issue first if you plan a large change, so we can align on direction.
 2. Fork the repo, create a branch, and keep commits focused.
-3. Run **`npm run typecheck`** and **`npm run check`** before opening a pull request.
+3. Run **`bun run typecheck`** and **`bun run check`** before opening a pull request.
 4. Describe **what** changed and **why** in the PR (user-visible behavior, env changes, or breaking changes).
 
 Please keep secrets and local `.env` files out of commits.

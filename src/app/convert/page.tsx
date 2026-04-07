@@ -96,25 +96,25 @@ export default function ConvertPage() {
   const lastResult = mutation.isSuccess ? mutation.data : null;
 
   return (
-    <MaxWidthContainer className="pt-14">
-      <div className="mb-8 flex w-full flex-wrap items-center justify-end gap-3">
-        <GitHubRepoLink />
+    <MaxWidthContainer className="pt-10 pb-6 sm:pt-14 sm:pb-8">
+      <div className="mb-6 flex w-full min-w-0 flex-wrap items-center justify-between gap-3 sm:mb-8">
         <UserButton />
+        <GitHubRepoLink className="shrink-0" />
       </div>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-semibold text-2xl tracking-tight">
+      <div className="mb-6 flex min-w-0 flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-semibold text-xl tracking-tight sm:text-2xl">
             Codebase to document
           </h1>
-          <p className="mt-1 text-muted-foreground">
+          <p className="mt-1 text-pretty text-muted-foreground text-sm sm:text-base">
             Upload a .zip of your project and receive a document in your desired
             format. This tool is free to use and will always be free.
           </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-start">
+        <div className="w-full min-w-0 flex-1">
           <Card>
             <CardHeader>
               <CardTitle>Export</CardTitle>
@@ -134,8 +134,9 @@ export default function ConvertPage() {
             <CardContent className="flex flex-col gap-6">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="zip-input">Zip archive</Label>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <Button
+                    className="shrink-0"
                     onClick={() => zipInputRef.current?.click()}
                     size="sm"
                     type="button"
@@ -151,20 +152,20 @@ export default function ConvertPage() {
                     ref={zipInputRef}
                     type="file"
                   />
-                  <span className="text-muted-foreground">
+                  <span className="wrap-break-word min-w-0 max-w-full flex-1 text-muted-foreground text-sm sm:text-base">
                     {zipFile?.name ?? "No file selected"}
                   </span>
                 </div>
                 <Collapsible className="rounded-lg border border-border/60 bg-muted/20">
                   <CollapsibleTrigger
                     className={cn(
-                      "group flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm",
+                      "group flex w-full min-w-0 items-start justify-between gap-2 px-3 py-2.5 text-left text-sm sm:items-center",
                       "text-foreground hover:bg-muted/40",
                       "data-[state=open]:rounded-t-lg data-[state=open]:border-border/60 data-[state=open]:border-b"
                     )}
                     type="button"
                   >
-                    <span className="font-medium">
+                    <span className="min-w-0 flex-1 font-medium leading-snug">
                       Don&apos;t have a .zip? Zip your project folder first
                     </span>
                     <IconChevronDown
@@ -312,8 +313,9 @@ export default function ConvertPage() {
                 </p>
               ) : null}
             </CardContent>
-            <CardFooter className="border-t pt-4">
+            <CardFooter className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-end">
               <Button
+                className="w-full sm:w-auto"
                 disabled={!canGenerate || mutation.isPending}
                 onClick={handleGenerate}
                 type="button"
@@ -324,13 +326,16 @@ export default function ConvertPage() {
           </Card>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center gap-6 py-2 lg:flex-row">
-        <GeneratedFilesStatsCard />
-        <figure className="mt-6 flex flex-col items-center gap-3 text-center">
+      <div className="flex w-full min-w-0 flex-col items-stretch gap-6 pt-10 sm:items-center lg:flex-row lg:items-start lg:justify-center">
+        <div className="w-full min-w-0 sm:max-w-md lg:max-w-sm lg:shrink-0">
+          <GeneratedFilesStatsCard />
+        </div>
+        <figure className="flex w-full min-w-0 max-w-md flex-col items-center gap-3 self-center text-center sm:mt-0 lg:mt-0">
           <Image
             alt="Codebase to Doc illustration — export your repository as documentation"
-            className="mx-auto max-h-48 max-w-full rounded-xl object-contain"
+            className="mx-auto h-auto max-h-40 w-full max-w-full rounded-xl object-contain sm:max-h-48"
             height={360}
+            sizes="(max-width: 640px) 100vw, 28rem"
             src="/image.png"
             width={480}
           />
