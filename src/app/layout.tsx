@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     description: defaultDescription,
     images: [
       {
-        url: "/image.png",
+        url: "/og.png",
         width: 480,
         height: 360,
         alt: "Codebase to Doc — turn your project into documentation",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${siteName} — Documentation from your codebase`,
     description: defaultDescription,
-    images: ["/image.png"],
+    images: ["/og.png"],
   },
   robots: {
     index: true,
