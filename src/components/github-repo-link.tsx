@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
-const REPO_URL = "https://github.com/deiondz/codebase-to-doc";
+export const GITHUB_REPO_URL = "https://github.com/deiondz/codebase-to-doc";
 
 export function GitHubRepoLink({ className }: { className?: string }) {
   return (
@@ -22,7 +22,7 @@ export function GitHubRepoLink({ className }: { className?: string }) {
             "inline-flex size-9 items-center justify-center rounded-md border border-border/60 bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
             className
           )}
-          href={REPO_URL}
+          href={GITHUB_REPO_URL}
           rel="noopener noreferrer"
           target="_blank"
         >

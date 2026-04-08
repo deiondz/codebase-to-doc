@@ -1,11 +1,17 @@
 "use client";
 
 import { UserButton } from "@daveyplate/better-auth-ui";
-import { IconChevronDown } from "@tabler/icons-react";
-import Image from "next/image";
+import {
+  ChevronDown,
+  FileArchive,
+  File as FileIcon,
+  FileText,
+  Upload,
+} from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { GeneratedFilesStatsCard } from "~/app/convert/generated-files-stats-card";
 import { GitHubRepoLink } from "~/components/github-repo-link";
 import { Button } from "~/components/ui/button";
 import {
@@ -29,29 +35,54 @@ import {
   useCodebaseExport,
   useCodebaseExportProgress,
 } from "~/lib/codebase-to-doc/use-codebase-export";
-import MaxWidthContainer from "~/lib/ui-utills";
 import { cn } from "~/lib/utils";
-import { GeneratedFilesStatsCard } from "./generated-files-stats-card";
+
+const outputFormats: Array<{
+  id: DocOutputFormat;
+  label: string;
+  icon: typeof FileText;
+}> = [
+  { id: "markdown", label: "Markdown", icon: FileText },
+  { id: "plaintext", label: "Plain Text", icon: FileText },
+  { id: "docx", label: "Word", icon: FileText },
+  { id: "pdf", label: "PDF", icon: FileIcon },
+];
+
+function getProgressLabel(progress: {
+  phase: string;
+  current: number;
+  total: number;
+  path?: string;
+  message?: string;
+}) {
+  if (progress.message) {
+    return progress.message;
+  }
+
+  const label = progress.phase === "zip" ? "Zip" : "Build";
+  const tail = progress.path ? ` - ${progress.path}` : "";
+  return `${label}: ${progress.current}/${progress.total}${tail}`;
+}
 
 export default function ConvertPage() {
   const zipInputRef = useRef<HTMLInputElement>(null);
-
   const [format, setFormat] = useState<DocOutputFormat>("markdown");
   const [zipFile, setZipFile] = useState<File | null>(null);
+  const [isZipHelpOpen, setIsZipHelpOpen] = useState(false);
 
-  const { data: progress } = useCodebaseExportProgress();
   const { mutation, reset } = useCodebaseExport();
+  const { data: progress } = useCodebaseExportProgress();
 
   const onZipChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const f = e.target.files?.[0];
-      setZipFile(f ?? null);
+      const file = e.target.files?.[0] ?? null;
+      setZipFile(file);
       reset();
     },
     [reset]
   );
 
-  const handleGenerate = () => {
+  const handleGenerate = useCallback(() => {
     if (!zipFile) {
       toast.error("Choose a .zip file first.");
       return;
@@ -61,89 +92,71 @@ export default function ConvertPage() {
     fd.append("format", format);
     fd.append("zip", zipFile);
     mutation.mutate(fd);
-  };
-
-  const canGenerate = zipFile !== null;
+  }, [format, mutation, zipFile]);
 
   const progressPct =
     progress && progress.total > 0
       ? Math.min(100, Math.round((progress.current / progress.total) * 100))
       : 0;
 
-  const progressLabel = (() => {
-    if (!progress) {
-      return null;
-    }
-    if (progress.message) {
-      return progress.message;
-    }
-    let label = "Build";
-    if (progress.phase === "zip") {
-      label = "Zip";
-    }
-    const tail = progress.path ? ` — ${progress.path}` : "";
-    return `${label}: ${progress.current}/${progress.total}${tail}`;
-  })();
-
-  let errorMessage: string | null = null;
-  if (mutation.isError) {
-    errorMessage =
-      mutation.error instanceof Error
-        ? mutation.error.message
-        : "Could not build the document.";
-  }
-
+  const progressLabel = progress ? getProgressLabel(progress) : null;
+  const canGenerate = Boolean(zipFile);
+  const errorMessage =
+    mutation.error instanceof Error ? mutation.error.message : null;
   const lastResult = mutation.isSuccess ? mutation.data : null;
 
   return (
-    <MaxWidthContainer className="pt-10 pb-6 sm:pt-14 sm:pb-8">
-      <div className="mb-6 flex w-full min-w-0 flex-wrap items-center justify-between gap-3 sm:mb-8">
-        <UserButton />
+    <div className="mx-auto w-full max-w-7xl px-4 pt-10 pb-12 sm:pt-14 md:px-8">
+      <div className="mb-10 flex w-full flex-wrap items-center justify-between gap-4">
+        <UserButton size="icon" />
         <GitHubRepoLink className="shrink-0" />
       </div>
-      <div className="mb-6 flex min-w-0 flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="font-semibold text-xl tracking-tight sm:text-2xl">
-            Codebase to document
-          </h1>
-          <p className="mt-1 text-pretty text-muted-foreground text-sm sm:text-base">
-            Upload a .zip of your project and receive a document in your desired
-            format. This tool is free to use and will always be free.
-          </p>
-        </div>
+
+      <div className="mb-10 max-w-2xl">
+        <h1 className="font-bold text-3xl tracking-tight sm:text-4xl">
+          Codebase to Document
+        </h1>
+        <p className="mt-3 text-lg text-muted-foreground">
+          Upload a .zip of your project and instantly convert it into a clean,
+          AI-ready document. Free to use, forever.
+        </p>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="w-full min-w-0 flex-1">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+        <div className="flex flex-col gap-6 lg:col-span-8">
           <Card>
-            <CardHeader>
-              <CardTitle>Export</CardTitle>
-              <CardDescription>
-                Keeps core project sources; skips editor/AI tooling (e.g.{" "}
-                <code className="text-[0.95em]">.cursor</code>,{" "}
-                <code className="text-[0.95em]">.vscode</code>,{" "}
-                <code className="text-[0.95em]">SKILL.md</code>, agent docs),
-                plus <code className="text-[0.95em]">node_modules</code>,{" "}
-                <code className="text-[0.95em]">.git</code> / git metadata,{" "}
-                <code className="text-[0.95em]">package.json</code> and other
-                manifests, build outputs, lockfiles, env files (templates like{" "}
-                <code className="text-[0.95em]">.env.example</code> stay), and
-                large or binary files.
+            <CardHeader className="border-b bg-muted/20 pb-6">
+              <CardTitle className="text-xl">Export Configuration</CardTitle>
+              <CardDescription className="mt-2 text-sm">
+                We automatically clean your codebase by skipping unnecessary
+                files (like <code className="text-xs">node_modules</code>,{" "}
+                <code className="text-xs">.git</code>, lockfiles, and binaries)
+                to ensure a high-quality output.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="zip-input">Zip archive</Label>
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <Button
-                    className="shrink-0"
-                    onClick={() => zipInputRef.current?.click()}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    Choose .zip
-                  </Button>
+
+            <CardContent className="flex flex-col gap-8 pt-8">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-bold text-primary text-xs">
+                    1
+                  </span>
+                  <Label className="font-semibold text-base">
+                    Upload Project Archive
+                  </Label>
+                </div>
+
+                <button
+                  aria-label="Select zip file"
+                  className={cn(
+                    "group relative flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-all hover:bg-muted/50",
+                    zipFile
+                      ? "border-primary bg-primary/5 hover:bg-primary/10"
+                      : "border-muted-foreground/25"
+                  )}
+                  onClick={() => zipInputRef.current?.click()}
+                  type="button"
+                >
                   <input
                     accept=".zip,application/zip"
                     className="sr-only"
@@ -152,198 +165,210 @@ export default function ConvertPage() {
                     ref={zipInputRef}
                     type="file"
                   />
-                  <span className="wrap-break-word min-w-0 max-w-full flex-1 text-muted-foreground text-sm sm:text-base">
-                    {zipFile?.name ?? "No file selected"}
-                  </span>
-                </div>
-                <Collapsible className="rounded-lg border border-border/60 bg-muted/20">
-                  <CollapsibleTrigger
-                    className={cn(
-                      "group flex w-full min-w-0 items-start justify-between gap-2 px-3 py-2.5 text-left text-sm sm:items-center",
-                      "text-foreground hover:bg-muted/40",
-                      "data-[state=open]:rounded-t-lg data-[state=open]:border-border/60 data-[state=open]:border-b"
-                    )}
-                    type="button"
-                  >
-                    <span className="min-w-0 flex-1 font-medium leading-snug">
-                      Don&apos;t have a .zip? Zip your project folder first
-                    </span>
-                    <IconChevronDown
-                      aria-hidden
-                      className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
-                    />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="border-border/60 border-t px-3 py-3 text-muted-foreground text-sm leading-relaxed">
-                    <p className="mb-3">
-                      This tool needs a single{" "}
-                      <strong className="text-foreground">.zip</strong> of your
-                      project root (the folder that has your source files).
-                      Create one on your computer, then use{" "}
-                      <strong className="text-foreground">Choose .zip</strong>{" "}
-                      above.
-                    </p>
-                    <p className="mb-2 font-medium text-foreground">Windows</p>
-                    <figure className="mb-4 overflow-hidden rounded-md border border-border/80 bg-muted/30">
-                      <Image
-                        alt="Windows 11 File Explorer: right-click menu with Compress to expanded, ZIP File selected"
-                        className="h-auto max-h-[min(22rem,55vh)] w-full object-contain object-top-left"
-                        height={420}
-                        sizes="(max-width: 640px) 100vw, min(42rem, 90vw)"
-                        src="/zip.png"
-                        width={780}
-                      />
-                      <figcaption className="border-border/80 border-t px-3 py-2 text-muted-foreground text-xs leading-snug">
-                        <span className="text-foreground">Windows 11:</span>{" "}
-                        open{" "}
-                        <strong className="text-foreground">
-                          Compress to…
-                        </strong>
-                        , then choose{" "}
-                        <strong className="text-foreground">ZIP File</strong>{" "}
-                        (as in the screenshot).
-                      </figcaption>
-                    </figure>
-                    <ol className="mb-4 list-decimal space-y-1.5 pl-5">
-                      <li>
-                        Open File Explorer and go to the folder that contains
-                        your project.
-                      </li>
-                      <li>
-                        Right-click the project folder (not a file inside it).
-                      </li>
-                      <li>
-                        <strong className="text-foreground">Windows 11:</strong>{" "}
-                        point to{" "}
-                        <strong className="text-foreground">
-                          Compress to…
-                        </strong>
-                        , then click{" "}
-                        <strong className="text-foreground">ZIP File</strong>.{" "}
-                        <strong className="text-foreground">Windows 10:</strong>{" "}
-                        choose{" "}
-                        <strong className="text-foreground">Send to</strong> →{" "}
-                        <strong className="text-foreground">
-                          Compressed (zipped) folder
-                        </strong>
-                        .
-                      </li>
-                      <li>
-                        A new <code className="text-[0.9em]">.zip</code> appears
-                        next to the folder. Upload that file here.
-                      </li>
-                    </ol>
-                    <p className="mb-2 font-medium text-foreground">macOS</p>
-                    <ol className="list-decimal space-y-1.5 pl-5">
-                      <li>In Finder, right-click your project folder.</li>
-                      <li>
-                        Choose{" "}
-                        <strong className="text-foreground">
-                          Compress &quot;FolderName&quot;
-                        </strong>
-                        .
-                      </li>
-                      <li>
-                        Upload the resulting{" "}
-                        <code className="text-[0.9em]">.zip</code>.
-                      </li>
-                    </ol>
-                  </CollapsibleContent>
-                </Collapsible>
+
+                  {zipFile ? (
+                    <>
+                      <div className="mb-3 rounded-full bg-primary/20 p-3 text-primary">
+                        <FileArchive size={32} />
+                      </div>
+                      <h3 className="font-semibold text-foreground">
+                        {zipFile.name}
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-sm">
+                        Click to change file
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mb-3 rounded-full bg-muted p-3 text-muted-foreground transition-colors group-hover:bg-primary/20 group-hover:text-primary">
+                        <Upload size={32} />
+                      </div>
+                      <h3 className="font-semibold text-foreground">
+                        Select a .zip file
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-sm">
+                        Browse your computer for your project archive
+                      </p>
+                    </>
+                  )}
+                </button>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label>Output format</Label>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 font-bold text-primary text-xs">
+                    2
+                  </span>
+                  <Label className="font-semibold text-base">
+                    Output Format
+                  </Label>
+                </div>
+
                 <RadioGroup
-                  className="grid gap-2 sm:grid-cols-2"
-                  onValueChange={(v) => {
-                    setFormat(v as DocOutputFormat);
+                  className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+                  onValueChange={(value) => {
+                    setFormat(value as DocOutputFormat);
                     reset();
                   }}
                   value={format}
                 >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem id="fmt-md" value="markdown" />
-                    <Label className="font-normal" htmlFor="fmt-md">
-                      Markdown (.md)
+                  {outputFormats.map((fmt) => (
+                    <Label
+                      className={cn(
+                        "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 p-4 text-center transition-all hover:bg-muted/50",
+                        format === fmt.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-muted bg-transparent text-muted-foreground"
+                      )}
+                      htmlFor={`fmt-${fmt.id}`}
+                      key={fmt.id}
+                    >
+                      <RadioGroupItem
+                        className="sr-only"
+                        id={`fmt-${fmt.id}`}
+                        value={fmt.id}
+                      />
+                      <fmt.icon
+                        className={
+                          format === fmt.id
+                            ? "text-primary"
+                            : "text-muted-foreground"
+                        }
+                        size={24}
+                      />
+                      <span className="font-medium text-sm">{fmt.label}</span>
                     </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem id="fmt-txt" value="plaintext" />
-                    <Label className="font-normal" htmlFor="fmt-txt">
-                      Plain text (.txt)
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem id="fmt-docx" value="docx" />
-                    <Label className="font-normal" htmlFor="fmt-docx">
-                      Word (.docx)
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem id="fmt-pdf" value="pdf" />
-                    <Label className="font-normal" htmlFor="fmt-pdf">
-                      PDF (.pdf)
-                    </Label>
-                  </div>
+                  ))}
                 </RadioGroup>
               </div>
 
-              {mutation.isPending && progress ? (
-                <div className="flex flex-col gap-2">
-                  <Progress value={progressPct} />
-                  <p className="break-all text-muted-foreground text-xs">
-                    {progressLabel}
+              <div className="flex flex-col gap-2 empty:hidden">
+                {mutation.isPending && progress && (
+                  <div className="fade-in slide-in-from-bottom-2 flex animate-in flex-col gap-2 rounded-lg bg-muted/50 p-4">
+                    <div className="flex justify-between font-medium text-sm">
+                      <span className="truncate pr-4 text-muted-foreground">
+                        {progressLabel}
+                      </span>
+                      <span>{progressPct}%</span>
+                    </div>
+                    <Progress className="h-2 w-full" value={progressPct} />
+                  </div>
+                )}
+
+                {errorMessage && (
+                  <p
+                    className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
+                    role="alert"
+                  >
+                    {errorMessage}
                   </p>
-                </div>
-              ) : null}
+                )}
 
-              {errorMessage ? (
-                <p className="text-destructive text-xs" role="alert">
-                  {errorMessage}
-                </p>
-              ) : null}
-
-              {lastResult ? (
-                <p className="text-muted-foreground text-xs">
-                  Last download: {lastResult.included} file(s) included
-                  {lastResult.skipped > 0
-                    ? `, ${lastResult.skipped} skipped (see top of the file for the list)`
-                    : ""}
-                  .
-                </p>
-              ) : null}
+                {lastResult && (
+                  <p className="rounded-lg bg-green-500/10 p-3 text-green-700 text-sm dark:text-green-400">
+                    <strong>Success!</strong> {lastResult.included} file(s)
+                    included
+                    {lastResult.skipped > 0
+                      ? ` (${lastResult.skipped} skipped).`
+                      : "."}
+                  </p>
+                )}
+              </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-end">
+
+            <CardFooter className="border-t bg-muted/20 px-6 py-4">
               <Button
-                className="w-full sm:w-auto"
+                className="w-full sm:ml-auto sm:w-auto"
                 disabled={!canGenerate || mutation.isPending}
                 onClick={handleGenerate}
                 type="button"
               >
-                {mutation.isPending ? "Working…" : "Generate and download"}
+                {mutation.isPending
+                  ? "Generating Document..."
+                  : "Generate & Download"}
               </Button>
             </CardFooter>
           </Card>
         </div>
-      </div>
-      <div className="flex w-full min-w-0 flex-col items-stretch gap-6 pt-10 sm:items-center lg:flex-row lg:items-start lg:justify-center">
-        <div className="w-full min-w-0 sm:max-w-md lg:max-w-sm lg:shrink-0">
+
+        <div className="flex flex-col gap-6 lg:col-span-4">
           <GeneratedFilesStatsCard />
+
+          <Collapsible
+            className="rounded-xl border bg-card"
+            onOpenChange={setIsZipHelpOpen}
+            open={isZipHelpOpen}
+          >
+            <CollapsibleTrigger
+              className={cn(
+                "group flex w-full items-center justify-between gap-2 px-5 py-4 text-left font-semibold text-foreground transition-colors hover:bg-muted/50",
+                isZipHelpOpen && "border-b bg-muted/20"
+              )}
+            >
+              Don't have a .zip?
+              <ChevronDown
+                className={cn(
+                  "h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200",
+                  isZipHelpOpen && "rotate-180"
+                )}
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-5 py-4 text-muted-foreground text-sm leading-relaxed">
+              <p className="mb-4">
+                You need a single{" "}
+                <strong className="text-foreground">.zip</strong> of your
+                project's root folder.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="mb-1 font-semibold text-foreground">
+                    Windows
+                  </h4>
+                  <ul className="list-disc space-y-1 pl-4">
+                    <li>Right-click your project folder.</li>
+                    <li>
+                      Select{" "}
+                      <strong className="text-foreground">
+                        Compress to...
+                      </strong>{" "}
+                      -&gt;{" "}
+                      <strong className="text-foreground">ZIP File</strong>.
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="mb-1 font-semibold text-foreground">macOS</h4>
+                  <ul className="list-disc space-y-1 pl-4">
+                    <li>Right-click your project folder in Finder.</li>
+                    <li>
+                      Select{" "}
+                      <strong className="text-foreground">
+                        Compress "Folder Name"
+                      </strong>
+                      .
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          <figure className="mt-4 flex w-full flex-col items-center text-center opacity-90 transition-opacity hover:opacity-100">
+            <img
+              alt="Illustration representing codebase documentation"
+              className="h-auto w-full rounded-2xl object-contain"
+              height={240}
+              src="./image.png"
+              width={320}
+            />
+            <figcaption className="mt-4 font-medium text-muted-foreground text-xs tracking-wide">
+              MADE WITH ❤️ BY{" "}
+              <span className="font-bold text-foreground">BLASTBENCHERS</span>
+            </figcaption>
+          </figure>
         </div>
-        <figure className="flex w-full min-w-0 max-w-md flex-col items-center gap-3 self-center text-center sm:mt-0 lg:mt-0">
-          <Image
-            alt="Codebase to Doc illustration — export your repository as documentation"
-            className="mx-auto h-auto max-h-40 w-full max-w-full rounded-xl object-contain sm:max-h-48"
-            height={360}
-            sizes="(max-width: 640px) 100vw, 28rem"
-            src="/image.png"
-            width={480}
-          />
-          <figcaption className="mt-2 text-muted-foreground text-sm italic">
-            Made with ❤️ by <span className="font-bold">Blastbenchers</span>
-          </figcaption>
-        </figure>
       </div>
-    </MaxWidthContainer>
+    </div>
   );
 }

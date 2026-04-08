@@ -105,6 +105,7 @@ export const IGNORE_NPM_MANIFEST_BASENAME_LOWER = new Set([
 	"pnpm-lock.yaml",
 	"pnpm-workspace.yaml",
 	"yarn.lock",
+	"bun.lock",
 	"bun.lockb",
 ]);
 
