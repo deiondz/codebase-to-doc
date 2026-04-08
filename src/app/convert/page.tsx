@@ -1,6 +1,7 @@
 "use client";
 
 import { UserButton } from "@daveyplate/better-auth-ui";
+import { unzipSync, zipSync } from "fflate";
 import {
   ChevronDown,
   FileArchive,
@@ -48,6 +49,99 @@ const outputFormats: Array<{
   { id: "pdf", label: "PDF", icon: FileIcon },
 ];
 
+const MEDIA_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".svg",
+  ".bmp",
+  ".ico",
+  ".avif",
+  ".mp4",
+  ".mov",
+  ".avi",
+  ".mkv",
+  ".webm",
+  ".wmv",
+  ".flv",
+  ".m4v",
+  ".3gp",
+  ".mpeg",
+  ".mpg",
+]);
+
+const MEDIA_DIR_NAMES = new Set([
+  "image",
+  "images",
+  "img",
+  "imgs",
+  "video",
+  "videos",
+]);
+
+interface PreparedZip {
+  file: File;
+  removedCount: number;
+}
+
+function shouldSkipMediaPath(rawPath: string): boolean {
+  const normalized = rawPath.replaceAll("\\", "/").toLowerCase();
+  const segments = normalized.split("/").filter(Boolean);
+  if (segments.some((segment) => MEDIA_DIR_NAMES.has(segment))) {
+    return true;
+  }
+
+  const lastSegment = segments.at(-1) ?? "";
+  const dot = lastSegment.lastIndexOf(".");
+  const ext = dot >= 0 ? lastSegment.slice(dot) : "";
+  return MEDIA_EXTENSIONS.has(ext);
+}
+
+function toCodeOnlyZipFileName(name: string): string {
+  if (name.toLowerCase().endsWith(".zip")) {
+    return `${name.slice(0, -4)}-code-only.zip`;
+  }
+  return `${name}-code-only.zip`;
+}
+
+async function buildCodeOnlyZip(file: File): Promise<PreparedZip> {
+  const zipBytes = new Uint8Array(await file.arrayBuffer());
+  let entries: Record<string, Uint8Array>;
+  try {
+    entries = unzipSync(zipBytes);
+  } catch {
+    return { file, removedCount: 0 };
+  }
+
+  const nextEntries: Record<string, Uint8Array> = {};
+  let removedCount = 0;
+
+  for (const [path, bytes] of Object.entries(entries)) {
+    if (path.endsWith("/")) {
+      continue;
+    }
+    if (shouldSkipMediaPath(path)) {
+      removedCount += 1;
+      continue;
+    }
+    nextEntries[path] = bytes;
+  }
+
+  if (removedCount === 0) {
+    return { file, removedCount: 0 };
+  }
+
+  const rebuilt = zipSync(nextEntries, { level: 6 });
+  const rebuiltData = new Uint8Array(rebuilt);
+  const rebuiltFile = new File([rebuiltData.buffer], toCodeOnlyZipFileName(file.name), {
+    type: "application/zip",
+    lastModified: Date.now(),
+  });
+  return { file: rebuiltFile, removedCount };
+}
+
 function getProgressLabel(progress: {
   phase: string;
   current: number;
@@ -68,6 +162,7 @@ export default function ConvertPage() {
   const zipInputRef = useRef<HTMLInputElement>(null);
   const [format, setFormat] = useState<DocOutputFormat>("markdown");
   const [zipFile, setZipFile] = useState<File | null>(null);
+  const [isPreparingZip, setIsPreparingZip] = useState(false);
   const [isZipHelpOpen, setIsZipHelpOpen] = useState(false);
 
   const { mutation, reset } = useCodebaseExport();
@@ -82,15 +177,31 @@ export default function ConvertPage() {
     [reset]
   );
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
     if (!zipFile) {
       toast.error("Choose a .zip file first.");
       return;
     }
 
+    setIsPreparingZip(true);
+    let uploadZip = zipFile;
+    try {
+      const prepared = await buildCodeOnlyZip(zipFile);
+      uploadZip = prepared.file;
+      if (prepared.removedCount > 0) {
+        toast.message(
+          `Removed ${prepared.removedCount} image/video file(s) before upload.`
+        );
+      }
+    } catch {
+      toast.error("Could not pre-process zip. Uploading original archive.");
+    } finally {
+      setIsPreparingZip(false);
+    }
+
     const fd = new FormData();
     fd.append("format", format);
-    fd.append("zip", zipFile);
+    fd.append("zip", uploadZip);
     mutation.mutate(fd);
   }, [format, mutation, zipFile]);
 
@@ -100,7 +211,13 @@ export default function ConvertPage() {
       : 0;
 
   const progressLabel = progress ? getProgressLabel(progress) : null;
-  const canGenerate = Boolean(zipFile);
+  const canGenerate = Boolean(zipFile) && !isPreparingZip;
+  let ctaLabel = "Generate & Download";
+  if (isPreparingZip) {
+    ctaLabel = "Preparing code-only archive...";
+  } else if (mutation.isPending) {
+    ctaLabel = "Generating Document...";
+  }
   const errorMessage =
     mutation.error instanceof Error ? mutation.error.message : null;
   const lastResult = mutation.isSuccess ? mutation.data : null;
@@ -279,13 +396,11 @@ export default function ConvertPage() {
             <CardFooter className="border-t bg-muted/20 px-6 py-4">
               <Button
                 className="w-full sm:ml-auto sm:w-auto"
-                disabled={!canGenerate || mutation.isPending}
+                disabled={!canGenerate || mutation.isPending || isPreparingZip}
                 onClick={handleGenerate}
                 type="button"
               >
-                {mutation.isPending
-                  ? "Generating Document..."
-                  : "Generate & Download"}
+                {ctaLabel}
               </Button>
             </CardFooter>
           </Card>
